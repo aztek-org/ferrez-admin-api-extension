@@ -12,8 +12,17 @@ class Admin extends Base {
 			'health'        => ['admin.health.read'],
 			'metadata'      => ['admin.health.read'],
 			'products'      => ['admin.products.read'],
+			'product_create' => ['admin.products.write'],
+			'product_update' => ['admin.products.write'],
+			'product_delete' => ['admin.products.write'],
 			'categories'    => ['admin.categories.read'],
+			'category_create' => ['admin.categories.write'],
+			'category_update' => ['admin.categories.write'],
+			'category_delete' => ['admin.categories.write'],
 			'manufacturers' => ['admin.manufacturers.read'],
+			'manufacturer_create' => ['admin.manufacturers.write'],
+			'manufacturer_update' => ['admin.manufacturers.write'],
+			'manufacturer_delete' => ['admin.manufacturers.write'],
 			'customers'     => ['admin.customers.read'],
 			'customer_groups' => ['admin.customer_groups.read'],
 			'orders'        => ['admin.orders.read'],
@@ -139,6 +148,114 @@ class Admin extends Base {
 				$this->audit('products_list_ok', 200, ['total' => $total, 'page' => $page, 'limit' => $limit]);
 
 				return;
+			case 'product_create':
+				if ($method !== 'POST') {
+					$this->respondError(405, 'error_method');
+					$this->audit('product_create_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/product');
+
+				$input = $this->getRequestBodyData();
+
+				if (trim((string)($input['name'] ?? '')) === '' || trim((string)($input['model'] ?? '')) === '') {
+					$this->respondError(400, 'error_required', ['required' => ['name', 'model']]);
+					$this->audit('product_create_invalid_payload', 400);
+
+					return;
+				}
+
+				$store_id = (int)($input['store_id'] ?? 0);
+				$product_id = $this->model_extension_ferrez_admin_rest_api_api_product->createProduct($input);
+				$product_info = $this->model_extension_ferrez_admin_rest_api_api_product->getProduct($product_id, $store_id);
+
+				$this->respondSuccess([
+					'product_id' => $product_id,
+					'product' => $product_info
+				], ['call' => $call], 201);
+				$this->audit('product_create_ok', 201, ['product_id' => $product_id]);
+
+				return;
+			case 'product_update':
+				if (!in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
+					$this->respondError(405, 'error_method');
+					$this->audit('product_update_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/product');
+
+				$input = $this->getRequestBodyData();
+				$product_id = (int)($input['product_id'] ?? ($this->request->get['product_id'] ?? 0));
+
+				if ($product_id < 1) {
+					$this->respondError(400, 'error_required', ['required' => ['product_id']]);
+					$this->audit('product_update_missing_id', 400);
+
+					return;
+				}
+
+				if (!$this->model_extension_ferrez_admin_rest_api_api_product->existsProduct($product_id)) {
+					$this->respondError(404, 'error_product');
+					$this->audit('product_update_not_found', 404, ['product_id' => $product_id]);
+
+					return;
+				}
+
+				if (trim((string)($input['name'] ?? '')) === '' || trim((string)($input['model'] ?? '')) === '') {
+					$this->respondError(400, 'error_required', ['required' => ['name', 'model']]);
+					$this->audit('product_update_invalid_payload', 400, ['product_id' => $product_id]);
+
+					return;
+				}
+
+				$this->model_extension_ferrez_admin_rest_api_api_product->updateProduct($product_id, $input);
+
+				$this->respondSuccess([
+					'product_id' => $product_id
+				], ['call' => $call]);
+				$this->audit('product_update_ok', 200, ['product_id' => $product_id]);
+
+				return;
+			case 'product_delete':
+				if (!in_array($method, ['POST', 'DELETE'], true)) {
+					$this->respondError(405, 'error_method');
+					$this->audit('product_delete_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/product');
+
+				$input = $this->getRequestBodyData();
+				$product_id = (int)($input['product_id'] ?? ($this->request->get['product_id'] ?? 0));
+
+				if ($product_id < 1) {
+					$this->respondError(400, 'error_required', ['required' => ['product_id']]);
+					$this->audit('product_delete_missing_id', 400);
+
+					return;
+				}
+
+				if (!$this->model_extension_ferrez_admin_rest_api_api_product->existsProduct($product_id)) {
+					$this->respondError(404, 'error_product');
+					$this->audit('product_delete_not_found', 404, ['product_id' => $product_id]);
+
+					return;
+				}
+
+				$this->model_extension_ferrez_admin_rest_api_api_product->deleteProduct($product_id);
+
+				$this->respondSuccess([
+					'product_id' => $product_id,
+					'deleted' => true
+				], ['call' => $call]);
+				$this->audit('product_delete_ok', 200, ['product_id' => $product_id]);
+
+				return;
 			case 'categories':
 				if ($method !== 'GET') {
 					$this->respondError(405, 'error_method');
@@ -201,6 +318,114 @@ class Admin extends Base {
 				$this->audit('categories_list_ok', 200, ['total' => $total, 'page' => $page, 'limit' => $limit]);
 
 				return;
+			case 'category_create':
+				if ($method !== 'POST') {
+					$this->respondError(405, 'error_method');
+					$this->audit('category_create_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/category');
+
+				$input = $this->getRequestBodyData();
+
+				if (trim((string)($input['name'] ?? '')) === '') {
+					$this->respondError(400, 'error_required', ['required' => ['name']]);
+					$this->audit('category_create_invalid_payload', 400);
+
+					return;
+				}
+
+				$store_id = (int)($input['store_id'] ?? 0);
+				$category_id = $this->model_extension_ferrez_admin_rest_api_api_category->createCategory($input);
+				$category_info = $this->model_extension_ferrez_admin_rest_api_api_category->getCategory($category_id, $store_id);
+
+				$this->respondSuccess([
+					'category_id' => $category_id,
+					'category' => $category_info
+				], ['call' => $call], 201);
+				$this->audit('category_create_ok', 201, ['category_id' => $category_id]);
+
+				return;
+			case 'category_update':
+				if (!in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
+					$this->respondError(405, 'error_method');
+					$this->audit('category_update_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/category');
+
+				$input = $this->getRequestBodyData();
+				$category_id = (int)($input['category_id'] ?? ($this->request->get['category_id'] ?? 0));
+
+				if ($category_id < 1) {
+					$this->respondError(400, 'error_required', ['required' => ['category_id']]);
+					$this->audit('category_update_missing_id', 400);
+
+					return;
+				}
+
+				if (!$this->model_extension_ferrez_admin_rest_api_api_category->existsCategory($category_id)) {
+					$this->respondError(404, 'error_category');
+					$this->audit('category_update_not_found', 404, ['category_id' => $category_id]);
+
+					return;
+				}
+
+				if (trim((string)($input['name'] ?? '')) === '') {
+					$this->respondError(400, 'error_required', ['required' => ['name']]);
+					$this->audit('category_update_invalid_payload', 400, ['category_id' => $category_id]);
+
+					return;
+				}
+
+				$this->model_extension_ferrez_admin_rest_api_api_category->updateCategory($category_id, $input);
+
+				$this->respondSuccess([
+					'category_id' => $category_id
+				], ['call' => $call]);
+				$this->audit('category_update_ok', 200, ['category_id' => $category_id]);
+
+				return;
+			case 'category_delete':
+				if (!in_array($method, ['POST', 'DELETE'], true)) {
+					$this->respondError(405, 'error_method');
+					$this->audit('category_delete_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/category');
+
+				$input = $this->getRequestBodyData();
+				$category_id = (int)($input['category_id'] ?? ($this->request->get['category_id'] ?? 0));
+
+				if ($category_id < 1) {
+					$this->respondError(400, 'error_required', ['required' => ['category_id']]);
+					$this->audit('category_delete_missing_id', 400);
+
+					return;
+				}
+
+				if (!$this->model_extension_ferrez_admin_rest_api_api_category->existsCategory($category_id)) {
+					$this->respondError(404, 'error_category');
+					$this->audit('category_delete_not_found', 404, ['category_id' => $category_id]);
+
+					return;
+				}
+
+				$this->model_extension_ferrez_admin_rest_api_api_category->deleteCategory($category_id);
+
+				$this->respondSuccess([
+					'category_id' => $category_id,
+					'deleted' => true
+				], ['call' => $call]);
+				$this->audit('category_delete_ok', 200, ['category_id' => $category_id]);
+
+				return;
 			case 'manufacturers':
 				if ($method !== 'GET') {
 					$this->respondError(405, 'error_method');
@@ -260,6 +485,114 @@ class Admin extends Base {
 					'limit' => $limit
 				]);
 				$this->audit('manufacturers_list_ok', 200, ['total' => $total, 'page' => $page, 'limit' => $limit]);
+
+				return;
+			case 'manufacturer_create':
+				if ($method !== 'POST') {
+					$this->respondError(405, 'error_method');
+					$this->audit('manufacturer_create_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/manufacturer');
+
+				$input = $this->getRequestBodyData();
+
+				if (trim((string)($input['name'] ?? '')) === '') {
+					$this->respondError(400, 'error_required', ['required' => ['name']]);
+					$this->audit('manufacturer_create_invalid_payload', 400);
+
+					return;
+				}
+
+				$store_id = (int)($input['store_id'] ?? 0);
+				$manufacturer_id = $this->model_extension_ferrez_admin_rest_api_api_manufacturer->createManufacturer($input);
+				$manufacturer_info = $this->model_extension_ferrez_admin_rest_api_api_manufacturer->getManufacturer($manufacturer_id, $store_id);
+
+				$this->respondSuccess([
+					'manufacturer_id' => $manufacturer_id,
+					'manufacturer' => $manufacturer_info
+				], ['call' => $call], 201);
+				$this->audit('manufacturer_create_ok', 201, ['manufacturer_id' => $manufacturer_id]);
+
+				return;
+			case 'manufacturer_update':
+				if (!in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
+					$this->respondError(405, 'error_method');
+					$this->audit('manufacturer_update_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/manufacturer');
+
+				$input = $this->getRequestBodyData();
+				$manufacturer_id = (int)($input['manufacturer_id'] ?? ($this->request->get['manufacturer_id'] ?? 0));
+
+				if ($manufacturer_id < 1) {
+					$this->respondError(400, 'error_required', ['required' => ['manufacturer_id']]);
+					$this->audit('manufacturer_update_missing_id', 400);
+
+					return;
+				}
+
+				if (!$this->model_extension_ferrez_admin_rest_api_api_manufacturer->existsManufacturer($manufacturer_id)) {
+					$this->respondError(404, 'error_manufacturer');
+					$this->audit('manufacturer_update_not_found', 404, ['manufacturer_id' => $manufacturer_id]);
+
+					return;
+				}
+
+				if (trim((string)($input['name'] ?? '')) === '') {
+					$this->respondError(400, 'error_required', ['required' => ['name']]);
+					$this->audit('manufacturer_update_invalid_payload', 400, ['manufacturer_id' => $manufacturer_id]);
+
+					return;
+				}
+
+				$this->model_extension_ferrez_admin_rest_api_api_manufacturer->updateManufacturer($manufacturer_id, $input);
+
+				$this->respondSuccess([
+					'manufacturer_id' => $manufacturer_id
+				], ['call' => $call]);
+				$this->audit('manufacturer_update_ok', 200, ['manufacturer_id' => $manufacturer_id]);
+
+				return;
+			case 'manufacturer_delete':
+				if (!in_array($method, ['POST', 'DELETE'], true)) {
+					$this->respondError(405, 'error_method');
+					$this->audit('manufacturer_delete_method_rejected', 405, ['method' => $method]);
+
+					return;
+				}
+
+				$this->load->model('extension/ferrez_admin_rest_api/api/manufacturer');
+
+				$input = $this->getRequestBodyData();
+				$manufacturer_id = (int)($input['manufacturer_id'] ?? ($this->request->get['manufacturer_id'] ?? 0));
+
+				if ($manufacturer_id < 1) {
+					$this->respondError(400, 'error_required', ['required' => ['manufacturer_id']]);
+					$this->audit('manufacturer_delete_missing_id', 400);
+
+					return;
+				}
+
+				if (!$this->model_extension_ferrez_admin_rest_api_api_manufacturer->existsManufacturer($manufacturer_id)) {
+					$this->respondError(404, 'error_manufacturer');
+					$this->audit('manufacturer_delete_not_found', 404, ['manufacturer_id' => $manufacturer_id]);
+
+					return;
+				}
+
+				$this->model_extension_ferrez_admin_rest_api_api_manufacturer->deleteManufacturer($manufacturer_id);
+
+				$this->respondSuccess([
+					'manufacturer_id' => $manufacturer_id,
+					'deleted' => true
+				], ['call' => $call]);
+				$this->audit('manufacturer_delete_ok', 200, ['manufacturer_id' => $manufacturer_id]);
 
 				return;
 			case 'customers':
@@ -496,7 +829,7 @@ class Admin extends Base {
 				$this->load->model('extension/ferrez_admin_rest_api/api/order');
 
 				$input = $this->getRequestBodyData();
-				$order_id = (int)($input['order_id'] ?? 0);
+				$order_id = (int)($input['order_id'] ?? ($this->request->get['order_id'] ?? 0));
 				$order_status_id = (int)($input['order_status_id'] ?? 0);
 				$comment = (string)($input['comment'] ?? '');
 				$notify = !empty($input['notify']);
@@ -732,7 +1065,7 @@ class Admin extends Base {
 				$this->load->model('extension/ferrez_admin_rest_api/api/returns');
 
 				$input = $this->getRequestBodyData();
-				$return_id = (int)($input['return_id'] ?? 0);
+				$return_id = (int)($input['return_id'] ?? ($this->request->get['return_id'] ?? 0));
 				$return_status_id = (int)($input['return_status_id'] ?? 0);
 				$comment = (string)($input['comment'] ?? '');
 				$notify = !empty($input['notify']);

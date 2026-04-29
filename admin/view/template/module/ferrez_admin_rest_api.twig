@@ -27,6 +27,8 @@
             </div>
             <div class="small text-muted mb-1">{{ entry_max_time_skew }}</div>
             <div class="small text-muted">{{ text_allowed_origins }}: {{ allowed_origins_list ? allowed_origins_list|length : 0 }}</div>
+            <div class="small text-muted">{{ text_extension_version }}: {{ extension_version }}</div>
+            <div class="small text-muted">{{ text_capabilities_sync }}: {{ capabilities_synced_at }}</div>
           </div>
         </div>
       </div>
@@ -45,7 +47,7 @@
           <div class="card-header"><i class="fas fa-key"></i> {{ text_scopes_card }}</div>
           <div class="card-body">
             <div class="display-6 mb-2">{{ scope_total }}</div>
-            <div class="small text-muted">{{ scope_user_total }} users with explicit scope maps</div>
+            <div class="small text-muted">{{ scope_user_total }} {{ text_users_with_explicit_scope_maps }}</div>
           </div>
         </div>
       </div>
@@ -54,7 +56,7 @@
           <div class="card-header"><i class="fas fa-diagram-project"></i> {{ text_endpoints_card }}</div>
           <div class="card-body">
             <div class="display-6 mb-2">{{ endpoint_total }}</div>
-            <div class="small text-muted">{{ write_endpoint_total }} write endpoints</div>
+            <div class="small text-muted">{{ read_endpoint_total }} {{ text_read_endpoints }} / {{ write_endpoint_total }} {{ text_write_endpoints }}</div>
           </div>
         </div>
       </div>

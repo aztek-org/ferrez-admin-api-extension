@@ -2,7 +2,7 @@
   "code": "ferrez_admin_rest_api",
   "name": "Ferrez Admin API",
   "description": "Admin REST API extension for OpenCart 4 with HMAC authentication, scoped read/write access, and admin dashboard.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Ferrez.mx",
   "link": "https://ferrez.mx"
 }

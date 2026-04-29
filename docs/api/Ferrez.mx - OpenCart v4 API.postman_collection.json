@@ -1,0 +1,2015 @@
+{
+  "info": {
+    "_postman_id": "ferrez-mx-opencart-v4-api",
+    "name": "Ferrez.mx — OpenCart v4 API",
+    "description": "# OpenCart v4 API Collection\n\nThis collection now covers two API surfaces:\n\n1. **Built-in OpenCart v4 order/checkout API** for cart and order creation flows\n2. **Ferrez Admin REST API extension** for admin-side catalog, customer, manufacturer, customer group, order, coupon, voucher, return, and metadata reads plus order/return history writes\n\n> The built-in API is still order/checkout-focused only. Catalog and admin reporting entities are exposed through the custom admin REST extension, not the stock OpenCart API.\n\n---\n\n## Authentication: HMAC-SHA1 Signature\n\nBoth API surfaces in this collection use **per-request HMAC-SHA1 signature verification**. There is no login endpoint and no token exchange — every single request is independently authenticated.\n\n### Setup\n\n1. **Create an API user** in admin panel: System → Users → API\n2. **Copy the username and key** and paste them into the collection variables below\n3. **Whitelist your IP** in the API user's IP addresses tab\n4. Set the `base_url`, `store_id`, `language`, and `currency` variables\n5. For the custom admin API, ensure the `Ferrez Admin REST API` module is installed and enabled\n\n### How the signature works\n\nEach request builds a string from the request parameters and signs it with the API key using HMAC-SHA1:\n\n```\n{route}\\n{call}\\n{username}\\n{host}\\n{path}\\n{store_id}\\n{language}\\n{currency}\\n{md5_of_post_body}\\n{timestamp}\\n\n```\n\nThe signature is then base64-encoded in the `signature` query parameter.\n\nThe **Pre-request Script** at the collection level handles this automatically — you only need to set the variables and keep `route` and `call` in each request query.\n\n### Validation checks (server-side)\n\n1. All required query params present (`route`, `call`, `username`, `store_id`, `language`, `currency`, `time`, `signature`)\n2. Username exists in `oc_api` with `status = 1`\n3. Requester IP is in the `oc_api_ip` whitelist\n4. Timestamp within ±450 seconds of server time\n5. HMAC signature matches\n6. For the admin extension, the module must be enabled and the API username must have any configured scopes\n\nIf any check fails → `403 Forbidden`\n\n---\n\n## Built-in Order Creation Flow\n\nTo create an order with the stock OpenCart API, follow this sequence:\n\n```\n1. Set Customer       → api/order?call=customer\n2. Add Product(s)     → api/order?call=product_add\n3. Set Payment Addr   → api/order?call=payment_address\n4. Set Shipping Addr  → api/order?call=shipping_address\n5. Get Ship Methods   → api/order?call=shipping_methods\n6. Set Ship Method    → api/order?call=shipping_method\n7. Get Pay Methods    → api/order?call=payment_methods\n8. Set Pay Method     → api/order?call=payment_method\n9. Confirm Order      → api/order?call=confirm\n10. Add History       → api/order?call=history_add\n```\n\n## Ferrez Admin REST API Highlights\n\nThe custom admin API uses route `extension/ferrez_admin_rest_api/api/admin` and currently includes:\n\n- `health`\n- `metadata`\n- `products`\n- `categories`\n- `manufacturers` (list and detail)\n- `customers` (list and detail)\n- `customer_groups` (list and detail)\n- `orders`\n- `order_histories`\n- `order_history_add`\n- `coupons`\n- `vouchers`\n- `returns`\n- `return_histories`\n- `return_history_add`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost",
+      "description": "Base URL of the OpenCart store (no trailing slash)"
+    },
+    {
+      "key": "api_username",
+      "value": "",
+      "description": "API username from admin: System → Users → API"
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "description": "API key from admin: System → Users → API"
+    },
+    {
+      "key": "store_id",
+      "value": "0",
+      "description": "Store ID (0 for default store)"
+    },
+    {
+      "key": "language",
+      "value": "es-es",
+      "description": "Language code (e.g. en-gb, es-es)"
+    },
+    {
+      "key": "currency",
+      "value": "MXN",
+      "description": "Currency code (e.g. USD, MXN, EUR)"
+    },
+    {
+      "key": "admin_route",
+      "value": "extension/ferrez_admin_rest_api/api/admin",
+      "description": "Route value for the Ferrez Admin REST API extension"
+    },
+    {
+      "key": "sample_product_id",
+      "value": "1",
+      "description": "Sample product ID for product detail requests"
+    },
+    {
+      "key": "sample_category_id",
+      "value": "1",
+      "description": "Sample category ID for category detail requests"
+    },
+    {
+      "key": "sample_customer_id",
+      "value": "1",
+      "description": "Sample customer ID for customer detail requests"
+    },
+    {
+      "key": "sample_manufacturer_id",
+      "value": "1",
+      "description": "Sample manufacturer ID for manufacturer detail requests"
+    },
+    {
+      "key": "sample_customer_group_id",
+      "value": "1",
+      "description": "Sample customer group ID for customer group detail requests"
+    },
+    {
+      "key": "sample_order_id",
+      "value": "1",
+      "description": "Sample order ID for detail and history requests"
+    },
+    {
+      "key": "sample_return_id",
+      "value": "1",
+      "description": "Sample return ID for detail and history requests"
+    },
+    {
+      "key": "sample_coupon_id",
+      "value": "1",
+      "description": "Sample coupon ID for coupon detail requests"
+    },
+    {
+      "key": "sample_order_status_id",
+      "value": "2",
+      "description": "Sample order status ID captured from metadata"
+    },
+    {
+      "key": "sample_return_status_id",
+      "value": "1",
+      "description": "Sample return status ID captured from metadata"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const route = pm.variables.replaceIn(pm.request.url.query.get('route') || '');",
+          "let call = pm.variables.replaceIn(pm.request.url.query.get('call') || '');",
+          "const method = String(pm.request.method || 'GET').toUpperCase();",
+          "function getVar(key) { const r = pm.variables.get(key); if (r !== undefined && r !== null && String(r) !== '') return String(r); const e = pm.environment.get(key); if (e !== undefined && e !== null && String(e) !== '') return String(e); const c = pm.collectionVariables.get(key); if (c !== undefined && c !== null && String(c) !== '') return String(c); return ''; }",
+          "function deriveAdminCall(tokens, httpMethod) { const idx = tokens.findIndex((v, i) => v === 'api' && tokens[i + 1] === 'admin' && tokens[i + 2] === 'v1'); if (idx < 0) return ''; const rest = tokens.slice(idx + 3); const resource = String(rest[0] || '').toLowerCase(); const id = String(rest[1] || ''); const action = String(rest[2] || '').toLowerCase(); if (resource === 'health' || resource === 'metadata') return resource; if (resource === 'product') { if (httpMethod === 'POST' && !id) return 'product_create'; if ((httpMethod === 'POST' || httpMethod === 'PUT' || httpMethod === 'PATCH') && id) return 'product_update'; if (httpMethod === 'DELETE' && id) return 'product_delete'; return 'products'; } if (resource === 'category') { if (httpMethod === 'POST' && !id) return 'category_create'; if ((httpMethod === 'POST' || httpMethod === 'PUT' || httpMethod === 'PATCH') && id) return 'category_update'; if (httpMethod === 'DELETE' && id) return 'category_delete'; return 'categories'; } if (resource === 'manufacturer') { if (httpMethod === 'POST' && !id) return 'manufacturer_create'; if ((httpMethod === 'POST' || httpMethod === 'PUT' || httpMethod === 'PATCH') && id) return 'manufacturer_update'; if (httpMethod === 'DELETE' && id) return 'manufacturer_delete'; return 'manufacturers'; } if (resource === 'customer') return 'customers'; if (resource === 'customer_group' || resource === 'customer-groups') return 'customer_groups'; if (resource === 'order') { if (action === 'histories' && httpMethod === 'GET') return 'order_histories'; if (action === 'history' && httpMethod === 'POST') return 'order_history_add'; return 'orders'; } if (resource === 'coupon') return 'coupons'; if (resource === 'voucher') return 'vouchers'; if (resource === 'return') { if (action === 'histories' && httpMethod === 'GET') return 'return_histories'; if (action === 'history' && httpMethod === 'POST') return 'return_history_add'; return 'returns'; } return ''; }",
+          "if (!call) { const tokens = (pm.request.url.path || []).map((p) => pm.variables.replaceIn(String(p))).filter((p) => p !== ''); call = deriveAdminCall(tokens, method); }",
+          "const username = getVar('api_username'); const apiKey = getVar('api_key'); const storeId = getVar('store_id'); const language = getVar('language'); const currency = getVar('currency'); const time = Math.floor(Date.now() / 1000); const baseUrl = getVar('base_url');",
+          "['base_url','api_username','api_key','store_id','language','currency'].forEach(function(key){ if(!getVar(key)){ throw new Error('Missing required Postman variable: ' + key); }});",
+          "if (!route || !call) { throw new Error('Missing route or call for signature generation.'); }",
+          "const urlObj = new URL(baseUrl); const host = urlObj.host; const path = urlObj.pathname.endsWith('/') ? urlObj.pathname : urlObj.pathname + '/';",
+          "let postBody = ''; if (pm.request.body && pm.request.body.mode === 'urlencoded') { const params = pm.request.body.urlencoded.all(); const parts = []; params.forEach(p => { if (!p.disabled) { const resolvedValue = pm.variables.replaceIn(String(p.value || '')); parts.push(encodeURIComponent(p.key) + '=' + encodeURIComponent(resolvedValue)); }}); postBody = parts.join('&'); } else if (pm.request.body && pm.request.body.mode === 'raw') { postBody = pm.variables.replaceIn(String(pm.request.body.raw || '')); }",
+          "let signString = ''; signString += route + '\\\\n'; signString += call + '\\\\n'; signString += username + '\\\\n'; signString += host + '\\\\n'; signString += path + '\\\\n'; signString += storeId + '\\\\n'; signString += language + '\\\\n'; signString += currency + '\\\\n'; signString += CryptoJS.MD5(postBody).toString() + '\\\\n'; signString += time + '\\\\n';",
+          "const hmac = CryptoJS.HmacSHA1(signString, apiKey); const signature = CryptoJS.enc.Base64.stringify(hmac);",
+          "pm.request.url.query.upsert({ key: 'username', value: username }); pm.request.url.query.upsert({ key: 'store_id', value: storeId }); pm.request.url.query.upsert({ key: 'language', value: language }); pm.request.url.query.upsert({ key: 'currency', value: currency }); pm.request.url.query.upsert({ key: 'time', value: time.toString() }); pm.request.url.query.upsert({ key: 'signature', value: signature });"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Order Flow",
+      "description": "Complete order creation flow. Run these requests in sequence — each step depends on the previous one storing data in the server session.\n\n**Important:** OpenCart uses PHP sessions to maintain state between API calls. Postman's cookie jar will handle this automatically as long as all requests use the same domain.",
+      "item": [
+        {
+          "name": "1. Set Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=customer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "customer"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "customer_id",
+                  "value": "0",
+                  "description": "Existing customer ID (0 for guest)"
+                },
+                {
+                  "key": "customer_group_id",
+                  "value": "1",
+                  "description": "Customer group ID (1 = default)"
+                },
+                {
+                  "key": "firstname",
+                  "value": "Juan",
+                  "description": "Required: 1-32 chars"
+                },
+                {
+                  "key": "lastname",
+                  "value": "Pérez",
+                  "description": "Required: 1-32 chars"
+                },
+                {
+                  "key": "email",
+                  "value": "juan@example.com",
+                  "description": "Required: valid email"
+                },
+                {
+                  "key": "telephone",
+                  "value": "5551234567",
+                  "description": "Required if config_telephone_required is enabled"
+                }
+              ]
+            },
+            "description": "Sets the customer for the order. This is always the first step.\n\n**Required fields:** `firstname`, `lastname`, `email`\n\n**Optional:** `customer_id` (use existing customer), `customer_group_id`, `telephone`, `custom_field[]`\n\nIf `customer_id` is provided and non-zero, the customer is looked up in the database. If `0`, the provided details are used as guest checkout data."
+          }
+        },
+        {
+          "name": "2. Add Product to Cart",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=product_add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "product_add"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "product_id",
+                  "value": "1",
+                  "description": "Product ID from the catalog"
+                },
+                {
+                  "key": "quantity",
+                  "value": "1",
+                  "description": "Quantity (default: 1)"
+                }
+              ]
+            },
+            "description": "Adds a single product to the cart. Call multiple times to add different products.\n\n**Required:** `product_id`\n\n**Optional:** `quantity` (default 1), `option[{option_id}]` (for products with options), `subscription_plan_id`\n\n**Response includes:** `products` array, `totals` array, `shipping_required` boolean"
+          }
+        },
+        {
+          "name": "2b. Add Product with Options",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=product_add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "product_add"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "product_id",
+                  "value": "1",
+                  "description": "Product ID"
+                },
+                {
+                  "key": "quantity",
+                  "value": "2",
+                  "description": "Quantity"
+                },
+                {
+                  "key": "option[218]",
+                  "value": "5",
+                  "description": "Option ID 218, value 5 (e.g. Color: Red). Get option IDs from product page or DB.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Example of adding a product with options (e.g. size, color).\n\nOption IDs can be found in:\n- Admin panel: Catalog → Products → Edit → Options tab\n- Database: `oc_product_option` and `oc_product_option_value` tables\n\nEnable the `option[]` parameter and adjust IDs for your products."
+          }
+        },
+        {
+          "name": "3. Set Payment Address",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=payment_address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "payment_address"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "payment_firstname",
+                  "value": "Juan",
+                  "description": "Required: 1-32 chars"
+                },
+                {
+                  "key": "payment_lastname",
+                  "value": "Pérez",
+                  "description": "Required: 1-32 chars"
+                },
+                {
+                  "key": "payment_company",
+                  "value": "",
+                  "description": "Optional"
+                },
+                {
+                  "key": "payment_address_1",
+                  "value": "Av. Revolución 123",
+                  "description": "Required: 3-128 chars"
+                },
+                {
+                  "key": "payment_address_2",
+                  "value": "Col. Centro",
+                  "description": "Optional"
+                },
+                {
+                  "key": "payment_city",
+                  "value": "Ciudad de México",
+                  "description": "Required: 2-128 chars"
+                },
+                {
+                  "key": "payment_postcode",
+                  "value": "06000",
+                  "description": "Required if country requires it"
+                },
+                {
+                  "key": "payment_country_id",
+                  "value": "138",
+                  "description": "Country ID (138 = Mexico)"
+                },
+                {
+                  "key": "payment_zone_id",
+                  "value": "2156",
+                  "description": "Zone/State ID (lookup in oc_zone table)"
+                }
+              ]
+            },
+            "description": "Sets the billing/payment address.\n\n**Required:** `payment_firstname`, `payment_lastname`, `payment_address_1`, `payment_city`, `payment_country_id`\n\n**Conditionally required:** `payment_postcode` (if country requires it), `payment_zone_id` (if country has zones)\n\n**Country IDs (common):**\n- 138 = Mexico\n- 223 = United States\n- 224 = Spain\n\nZone IDs for Mexico can be found in `oc_zone` table WHERE `country_id = 138`."
+          }
+        },
+        {
+          "name": "4. Set Shipping Address",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=shipping_address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "shipping_address"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "shipping_firstname",
+                  "value": "Juan",
+                  "description": "Required: 1-32 chars"
+                },
+                {
+                  "key": "shipping_lastname",
+                  "value": "Pérez",
+                  "description": "Required: 1-32 chars"
+                },
+                {
+                  "key": "shipping_company",
+                  "value": "",
+                  "description": "Optional"
+                },
+                {
+                  "key": "shipping_address_1",
+                  "value": "Av. Revolución 123",
+                  "description": "Required: 3-128 chars"
+                },
+                {
+                  "key": "shipping_address_2",
+                  "value": "Col. Centro",
+                  "description": "Optional"
+                },
+                {
+                  "key": "shipping_city",
+                  "value": "Ciudad de México",
+                  "description": "Required: 2-128 chars"
+                },
+                {
+                  "key": "shipping_postcode",
+                  "value": "06000",
+                  "description": "Required if country requires it"
+                },
+                {
+                  "key": "shipping_country_id",
+                  "value": "138",
+                  "description": "Country ID (138 = Mexico)"
+                },
+                {
+                  "key": "shipping_zone_id",
+                  "value": "2156",
+                  "description": "Zone/State ID"
+                }
+              ]
+            },
+            "description": "Sets the shipping address. Only required if the cart contains physical products (`shipping_required = true`).\n\nSame validation rules as payment address but with `shipping_` prefix."
+          }
+        },
+        {
+          "name": "5. Get Shipping Methods",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=shipping_methods",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "shipping_methods"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "description": "Returns available shipping methods based on the shipping address and cart contents.\n\n**No POST body required.** Uses session data from previous steps.\n\n**Response:** `{ \"shipping_methods\": { \"flat\": { \"title\": \"Flat Rate\", \"quote\": { \"flat\": { \"code\": \"flat.flat\", \"name\": \"...\", \"cost\": 5.00, \"tax_class_id\": 9, ... } } } } }`\n\nUse the returned `code`, `name`, `cost`, and `tax_class_id` in the next step."
+          }
+        },
+        {
+          "name": "6. Set Shipping Method",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=shipping_method",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "shipping_method"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "shipping_method[name]",
+                  "value": "Flat Shipping Rate",
+                  "description": "Name from shipping_methods response"
+                },
+                {
+                  "key": "shipping_method[code]",
+                  "value": "flat.flat",
+                  "description": "Code from shipping_methods response"
+                },
+                {
+                  "key": "shipping_method[cost]",
+                  "value": "5.00",
+                  "description": "Cost from shipping_methods response"
+                },
+                {
+                  "key": "shipping_method[tax_class_id]",
+                  "value": "9",
+                  "description": "Tax class ID from shipping_methods response"
+                }
+              ]
+            },
+            "description": "Selects the shipping method. Use values returned by the \"Get Shipping Methods\" step.\n\n**Required:** `shipping_method[name]`, `shipping_method[code]`, `shipping_method[cost]`, `shipping_method[tax_class_id]`\n\n**Response includes:** updated `products`, `totals`, and `shipping_required`."
+          }
+        },
+        {
+          "name": "7. Get Payment Methods",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=payment_methods",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "payment_methods"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "description": "Returns available payment methods based on the order context.\n\n**No POST body required.** Uses session data from previous steps.\n\n**Response:** `{ \"payment_methods\": { \"cod\": { \"title\": \"Cash On Delivery\", \"code\": \"cod\", \"sort_order\": \"5\" } } }`\n\nUse the `name` and `code` from the response in the next step."
+          }
+        },
+        {
+          "name": "8. Set Payment Method",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=payment_method",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "payment_method"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "payment_method[name]",
+                  "value": "Cash On Delivery",
+                  "description": "Name from payment_methods response"
+                },
+                {
+                  "key": "payment_method[code]",
+                  "value": "cod",
+                  "description": "Code from payment_methods response"
+                }
+              ]
+            },
+            "description": "Selects the payment method. Use values from the \"Get Payment Methods\" response.\n\n**Required:** `payment_method[name]`, `payment_method[code]`\n\n**Response includes:** updated `products`, `totals`, `shipping_required`."
+          }
+        },
+        {
+          "name": "9. Confirm Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=confirm",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "confirm"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "order_status_id",
+                  "value": "1",
+                  "description": "Order status: 1=Pending, 2=Processing, 3=Shipped, 5=Complete, 7=Canceled"
+                },
+                {
+                  "key": "comment",
+                  "value": "Order placed via API",
+                  "description": "Optional order comment"
+                },
+                {
+                  "key": "affiliate_id",
+                  "value": "0",
+                  "description": "Optional affiliate ID"
+                }
+              ]
+            },
+            "description": "Creates the order. Validates all previous steps were completed.\n\n**Validation checks:**\n- Customer data exists (step 1)\n- Cart has products (step 2)\n- Stock is available (or config allows out-of-stock checkout)\n- Payment address set (step 3, if required by config)\n- Shipping address + method set (steps 4-6, if cart has physical products)\n- Payment method set (steps 7-8)\n\n**Response on success:** `{ \"success\": \"...\", \"order_id\": 123, \"points\": 0 }`\n\n**Common order_status_id values:**\n- 1 = Pending\n- 2 = Processing\n- 3 = Shipped\n- 5 = Complete\n- 7 = Canceled\n- 15 = Processed"
+          }
+        },
+        {
+          "name": "10. Add Order History",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=history_add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "history_add"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "order_id",
+                  "value": "1",
+                  "description": "Order ID returned from confirm step"
+                },
+                {
+                  "key": "order_status_id",
+                  "value": "2",
+                  "description": "New status ID"
+                },
+                {
+                  "key": "comment",
+                  "value": "Payment received",
+                  "description": "Optional status change comment"
+                },
+                {
+                  "key": "notify",
+                  "value": "1",
+                  "description": "1 = send email notification to customer, 0 = don't"
+                }
+              ]
+            },
+            "description": "Adds a history/status update to an existing order. Use this to change order status after creation.\n\n**Required:** `order_id`, `order_status_id`\n\n**Optional:** `comment`, `notify` (1 to email customer)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart Operations",
+      "description": "Standalone cart inspection and bulk product operations.",
+      "item": [
+        {
+          "name": "Get Cart Contents",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "cart"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "product[0][product_id]",
+                  "value": "1",
+                  "description": "First product ID"
+                },
+                {
+                  "key": "product[0][quantity]",
+                  "value": "2",
+                  "description": "Quantity"
+                },
+                {
+                  "key": "product[1][product_id]",
+                  "value": "5",
+                  "description": "Second product ID",
+                  "disabled": true
+                },
+                {
+                  "key": "product[1][quantity]",
+                  "value": "1",
+                  "description": "Quantity",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Sets the full cart contents and returns products, totals, and shipping requirement.\n\nUnlike `product_add` which adds incrementally, the `cart` call **replaces** the entire cart with the provided products.\n\n**Body format:**\n```\nproduct[0][product_id]=1&product[0][quantity]=2\nproduct[1][product_id]=5&product[1][quantity]=1\n```\n\n**Response:** `{ \"products\": [...], \"totals\": [...], \"shipping_required\": true }`"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Extensions",
+      "description": "Extension-related API calls (coupons, rewards, etc.)",
+      "item": [
+        {
+          "name": "Apply Coupon",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=extension&code=coupon",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "extension"
+                },
+                {
+                  "key": "code",
+                  "value": "coupon"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "coupon",
+                  "value": "DISCOUNT10",
+                  "description": "Coupon code to apply"
+                }
+              ]
+            },
+            "description": "Applies a coupon code to the current order.\n\n**Requires:** Customer set, cart has products, coupon extension enabled.\n\n**Response on success:** updated `products`, `totals`, `shipping_required`."
+          }
+        },
+        {
+          "name": "Apply Reward Points",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=extension&code=reward",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "extension"
+                },
+                {
+                  "key": "code",
+                  "value": "reward"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "reward",
+                  "value": "100",
+                  "description": "Number of reward points to redeem"
+                }
+              ]
+            },
+            "description": "Redeems reward points on the current order.\n\n**Requires:** Logged-in customer (customer_id > 0), cart has products, reward extension enabled, customer has sufficient points."
+          }
+        },
+        {
+          "name": "Set Affiliate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=affiliate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "affiliate"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "affiliate_id",
+                  "value": "1",
+                  "description": "Affiliate ID to credit for this order"
+                }
+              ]
+            },
+            "description": "Associates an affiliate with the current order for commission tracking.\n\n**Optional step** — only needed if using the affiliate system."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reference",
+      "description": "Helpful reference data for building API requests.",
+      "item": [
+        {
+          "name": "[Info] Common Country IDs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/index.php?route=api/order&call=cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "api/order"
+                },
+                {
+                  "key": "call",
+                  "value": "cart"
+                }
+              ]
+            },
+            "description": "## Common Country IDs\n\n| ID | Country |\n|---|---|\n| 138 | Mexico |\n| 223 | United States |\n| 224 | United Kingdom |\n| 33 | Canada |\n| 198 | Spain |\n\n## Mexico Zone IDs (States)\n\nLookup: `SELECT zone_id, name FROM oc_zone WHERE country_id = 138`\n\nCommon:\n| ID | State |\n|---|---|\n| 2156 | Ciudad de México |\n| 2157 | Jalisco |\n| 2163 | Nuevo León |\n| 2168 | Puebla |\n\n## Order Status IDs\n\nLookup: `SELECT * FROM oc_order_status WHERE language_id = 2`\n\n| ID | Status |\n|---|---|\n| 1 | Pending |\n| 2 | Processing |\n| 3 | Shipped |\n| 5 | Complete |\n| 7 | Canceled |\n| 8 | Denied |\n| 9 | Canceled Reversal |\n| 10 | Failed |\n| 11 | Refunded |\n| 12 | Reversed |\n| 13 | Chargeback |\n| 14 | Expired |\n| 15 | Processed |\n| 16 | Voided |"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ferrez Admin REST API",
+      "description": "Admin-side reads and history writes exposed by the Ferrez Admin REST API extension.",
+      "item": [
+        {
+          "name": "Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Health returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Health returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Health status is ok', function () { pm.expect(json.data.status).to.eql('ok'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/health?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "health"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Simple health check for the custom admin REST API. Use this first to confirm the module, signature, and API user are working."
+          }
+        },
+        {
+          "name": "Metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Metadata returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Metadata returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Metadata includes stores, languages, currencies and statuses', function () {",
+                  "    pm.expect(json.data.stores).to.be.an('array');",
+                  "    pm.expect(json.data.languages).to.be.an('array');",
+                  "    pm.expect(json.data.currencies).to.be.an('array');",
+                  "    pm.expect(json.data.order_statuses).to.be.an('array');",
+                  "    pm.expect(json.data.return_statuses).to.be.an('array');",
+                  "});",
+                  "if (json.data.order_statuses.length > 0) { pm.collectionVariables.set('sample_order_status_id', String(json.data.order_statuses[0].order_status_id)); }",
+                  "if (json.data.return_statuses.length > 0) { pm.collectionVariables.set('sample_return_status_id', String(json.data.return_statuses[0].return_status_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/metadata?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "metadata"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Returns reference data needed by other admin requests: stores, languages, currencies, order statuses, and return statuses. Use this before order or return history writes so you have valid status IDs."
+          }
+        },
+        {
+          "name": "List Products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Products list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Products list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Products list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "pm.test('Products list includes paging meta', function () { pm.expect(json.meta).to.have.property('total'); pm.expect(json.meta).to.have.property('page'); pm.expect(json.meta).to.have.property('limit'); });",
+                  "if (json.data.length > 0 && json.data[0].product_id) { pm.collectionVariables.set('sample_product_id', String(json.data[0].product_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/product?route={{admin_route}}&store_id={{store_id}}&page=1&limit=20&sort=p.product_id&order=ASC&filter_name=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "product"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "p.product_id"
+                },
+                {
+                  "key": "order",
+                  "value": "ASC"
+                },
+                {
+                  "key": "filter_name",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lists products with paging and filters. Optional filters: `filter_name`, `filter_model`, `filter_status`."
+          }
+        },
+        {
+          "name": "Get Product Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Product detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Product detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Product detail returns requested product', function () { pm.expect(String(json.data.product_id)).to.eql(pm.collectionVariables.get('sample_product_id')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/product/{{sample_product_id}}?route={{admin_route}}&store_id={{store_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "product",
+                "{{sample_product_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                }
+              ]
+            },
+            "description": "Returns a single product by ID, including description, identifiers, inventory, dimensions, and timestamps."
+          }
+        },
+        {
+          "name": "List Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Categories list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Categories list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Categories list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "pm.test('Categories list includes paging meta', function () { pm.expect(json.meta).to.have.property('total'); pm.expect(json.meta).to.have.property('page'); pm.expect(json.meta).to.have.property('limit'); });",
+                  "if (json.data.length > 0 && json.data[0].category_id) { pm.collectionVariables.set('sample_category_id', String(json.data[0].category_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/category?route={{admin_route}}&store_id={{store_id}}&page=1&limit=20&sort=c.category_id&order=ASC&filter_name=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "category"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "c.category_id"
+                },
+                {
+                  "key": "order",
+                  "value": "ASC"
+                },
+                {
+                  "key": "filter_name",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lists categories with paging and filters. Optional filters: `filter_name`, `filter_status`."
+          }
+        },
+        {
+          "name": "Get Category Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Category detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Category detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Category detail returns requested category', function () { pm.expect(String(json.data.category_id)).to.eql(pm.collectionVariables.get('sample_category_id')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/category/{{sample_category_id}}?route={{admin_route}}&store_id={{store_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "category",
+                "{{sample_category_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                }
+              ]
+            },
+            "description": "Returns a single category by ID, including description, parent, display flags, sort order, and status."
+          }
+        },
+        {
+          "name": "List Manufacturers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Manufacturers list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Manufacturers list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Manufacturers list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "if (json.data.length > 0 && json.data[0].manufacturer_id) { pm.collectionVariables.set('sample_manufacturer_id', String(json.data[0].manufacturer_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/manufacturer?route={{admin_route}}&store_id={{store_id}}&page=1&limit=20&sort=m.manufacturer_id&order=ASC&filter_name=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "manufacturer"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "m.manufacturer_id"
+                },
+                {
+                  "key": "order",
+                  "value": "ASC"
+                },
+                {
+                  "key": "filter_name",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lists manufacturers with paging and optional `filter_name` filtering."
+          }
+        },
+        {
+          "name": "Get Manufacturer Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Manufacturer detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Manufacturer detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Manufacturer detail returns requested manufacturer', function () { pm.expect(String(json.data.manufacturer_id)).to.eql(pm.collectionVariables.get('sample_manufacturer_id')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/manufacturer/{{sample_manufacturer_id}}?route={{admin_route}}&store_id={{store_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "manufacturer",
+                "{{sample_manufacturer_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                }
+              ]
+            },
+            "description": "Returns a single manufacturer by ID."
+          }
+        },
+        {
+          "name": "List Customers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Customers list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Customers list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Customers list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "if (json.data.length > 0 && json.data[0].customer_id) { pm.collectionVariables.set('sample_customer_id', String(json.data[0].customer_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/customer?route={{admin_route}}&page=1&limit=20&sort=c.customer_id&order=ASC&filter_email=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "customer"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "c.customer_id"
+                },
+                {
+                  "key": "order",
+                  "value": "ASC"
+                },
+                {
+                  "key": "filter_email",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lists customers with paging and filters. Optional filters: `filter_firstname`, `filter_lastname`, `filter_email`, `filter_status`."
+          }
+        },
+        {
+          "name": "Get Customer Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Customer detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Customer detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Customer detail returns requested customer', function () { pm.expect(String(json.data.customer_id)).to.eql(pm.collectionVariables.get('sample_customer_id')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/customer/{{sample_customer_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "customer",
+                "{{sample_customer_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Returns a single customer by ID including group, status, safe flag, newsletter flag, IP, and date_added."
+          }
+        },
+        {
+          "name": "List Customer Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Customer groups list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Customer groups list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Customer groups list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "if (json.data.length > 0 && json.data[0].customer_group_id) { pm.collectionVariables.set('sample_customer_group_id', String(json.data[0].customer_group_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/customer_group?route={{admin_route}}&page=1&limit=20&sort=cgd.name&order=ASC&filter_name=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "customer_group"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "cgd.name"
+                },
+                {
+                  "key": "order",
+                  "value": "ASC"
+                },
+                {
+                  "key": "filter_name",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Lists customer groups with paging and optional `filter_name` filtering."
+          }
+        },
+        {
+          "name": "Get Customer Group Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Customer group detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Customer group detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Customer group detail returns requested customer group', function () { pm.expect(String(json.data.customer_group_id)).to.eql(pm.collectionVariables.get('sample_customer_group_id')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/customer_group/{{sample_customer_group_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "customer_group",
+                "{{sample_customer_group_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Returns a single customer group by ID."
+          }
+        },
+        {
+          "name": "List Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Orders list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Orders list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Orders list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "if (json.data.length > 0 && json.data[0].order_id) { pm.collectionVariables.set('sample_order_id', String(json.data[0].order_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/order?route={{admin_route}}&page=1&limit=20&sort=o.order_id&order=DESC&store_id={{store_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "order"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "o.order_id"
+                },
+                {
+                  "key": "order",
+                  "value": "DESC"
+                },
+                {
+                  "key": "store_id",
+                  "value": "{{store_id}}"
+                }
+              ]
+            },
+            "description": "Lists orders with paging and filters. Optional filters: `filter_order_status_id`, `filter_customer`, `filter_email`, `filter_date_from`, `filter_date_to`."
+          }
+        },
+        {
+          "name": "Get Order Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Order detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Order detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Order detail includes products, totals and histories', function () {",
+                  "    pm.expect(json.data).to.have.property('products');",
+                  "    pm.expect(json.data).to.have.property('totals');",
+                  "    pm.expect(json.data).to.have.property('histories');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/order/{{sample_order_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "order",
+                "{{sample_order_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Returns a single order with normalized address data plus `products`, `totals`, and `histories`."
+          }
+        },
+        {
+          "name": "Add Order History",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/order/{{sample_order_id}}/history?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "order",
+                "{{sample_order_id}}",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "order_status_id",
+                  "value": "{{sample_order_status_id}}",
+                  "description": "Use a valid status ID from the Metadata request"
+                },
+                {
+                  "key": "comment",
+                  "value": "Updated from Postman smoke test",
+                  "description": "Optional comment"
+                },
+                {
+                  "key": "notify",
+                  "value": "0",
+                  "description": "1 sends customer notification email"
+                },
+                {
+                  "key": "override",
+                  "value": "0",
+                  "description": "Optional OpenCart history override flag"
+                }
+              ]
+            },
+            "description": "Writes a new history row for an existing order. Resolve valid `order_status_id` values from the Metadata request first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Order history write returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Order history write returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Order history write echoes order_id', function () { pm.expect(String(json.data.order_id)).to.eql(pm.collectionVariables.get('sample_order_id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Coupons",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Coupons list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Coupons list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Coupons list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "if (json.data.length > 0 && json.data[0].coupon_id) { pm.collectionVariables.set('sample_coupon_id', String(json.data[0].coupon_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/coupon?route={{admin_route}}&page=1&limit=20&sort=name&order=ASC",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "coupon"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "name"
+                },
+                {
+                  "key": "order",
+                  "value": "ASC"
+                }
+              ]
+            },
+            "description": "Lists coupon records with optional `filter_name`, `filter_code`, and `filter_status` filters."
+          }
+        },
+        {
+          "name": "Get Coupon Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Coupon detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Coupon detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Coupon detail returns requested coupon', function () { pm.expect(String(json.data.coupon_id)).to.eql(pm.collectionVariables.get('sample_coupon_id')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/coupon/{{sample_coupon_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "coupon",
+                "{{sample_coupon_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Returns a single coupon by ID."
+          }
+        },
+        {
+          "name": "List Vouchers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Vouchers list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Vouchers list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Vouchers list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/voucher?route={{admin_route}}&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "voucher"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Lists voucher-like rows inferred from `order_total` records with `code='voucher'`. Optional filters: `filter_order_id`, `filter_order_status_id`."
+          }
+        },
+        {
+          "name": "List Returns",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Returns list returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Returns list returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Returns list returns array payload', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "if (json.data.length > 0 && json.data[0].return_id) { pm.collectionVariables.set('sample_return_id', String(json.data[0].return_id)); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/return?route={{admin_route}}&page=1&limit=20&sort=r.return_id&order=DESC",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "return"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "r.return_id"
+                },
+                {
+                  "key": "order",
+                  "value": "DESC"
+                }
+              ]
+            },
+            "description": "Lists returns with optional filters: `filter_order_id`, `filter_customer`, `filter_product`, `filter_return_status_id`."
+          }
+        },
+        {
+          "name": "Get Return Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Return detail returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Return detail returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Return detail includes histories', function () { pm.expect(json.data).to.have.property('histories'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/return/{{sample_return_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "return",
+                "{{sample_return_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Returns a single return with appended `histories`."
+          }
+        },
+        {
+          "name": "Add Return History",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/return/{{sample_return_id}}/history?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "return",
+                "{{sample_return_id}}",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "return_status_id",
+                  "value": "{{sample_return_status_id}}",
+                  "description": "Use a valid return status ID from the Metadata request"
+                },
+                {
+                  "key": "comment",
+                  "value": "Updated from Postman smoke test",
+                  "description": "Optional comment"
+                },
+                {
+                  "key": "notify",
+                  "value": "0",
+                  "description": "1 triggers customer notification when supported"
+                }
+              ]
+            },
+            "description": "Writes a new history row for an existing return. Resolve valid `return_status_id` values from the Metadata request first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Return history write returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Return history write returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "pm.test('Return history write echoes return_id', function () { pm.expect(String(json.data.return_id)).to.eql(pm.collectionVariables.get('sample_return_id')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

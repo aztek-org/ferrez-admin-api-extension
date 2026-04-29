@@ -18,7 +18,7 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 		}
 
 		$metadata = [
-			'name' => 'Ferrez Admin REST API',
+			'name' => 'Ferrez Admin API',
 			'version' => '1.0.0',
 			'author' => 'Ferrez.mx',
 			'link' => 'https://ferrez.mx'
@@ -59,24 +59,24 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 			[
 				'title' => $this->language->get('text_group_catalog'),
 				'endpoints' => [
-					['call' => 'products', 'methods' => 'GET', 'scope' => 'admin.products.read', 'description' => $this->language->get('text_endpoint_products')],
-					['call' => 'categories', 'methods' => 'GET', 'scope' => 'admin.categories.read', 'description' => $this->language->get('text_endpoint_categories')],
-					['call' => 'manufacturers', 'methods' => 'GET', 'scope' => 'admin.manufacturers.read', 'description' => $this->language->get('text_endpoint_manufacturers')],
-					['call' => 'customers', 'methods' => 'GET', 'scope' => 'admin.customers.read', 'description' => $this->language->get('text_endpoint_customers')],
-					['call' => 'customer_groups', 'methods' => 'GET', 'scope' => 'admin.customer_groups.read', 'description' => $this->language->get('text_endpoint_customer_groups')]
+					['call' => 'product', 'methods' => 'GET, POST, PUT, PATCH, DELETE', 'scope' => 'admin.products.read/admin.products.write', 'description' => $this->language->get('text_endpoint_products')],
+					['call' => 'category', 'methods' => 'GET, POST, PUT, PATCH, DELETE', 'scope' => 'admin.categories.read/admin.categories.write', 'description' => $this->language->get('text_endpoint_categories')],
+					['call' => 'manufacturer', 'methods' => 'GET, POST, PUT, PATCH, DELETE', 'scope' => 'admin.manufacturers.read/admin.manufacturers.write', 'description' => $this->language->get('text_endpoint_manufacturers')],
+					['call' => 'customer', 'methods' => 'GET', 'scope' => 'admin.customers.read', 'description' => $this->language->get('text_endpoint_customers')],
+					['call' => 'customer_group', 'methods' => 'GET', 'scope' => 'admin.customer_groups.read', 'description' => $this->language->get('text_endpoint_customer_groups')]
 				]
 			],
 			[
 				'title' => $this->language->get('text_group_sales'),
 				'endpoints' => [
-					['call' => 'orders', 'methods' => 'GET', 'scope' => 'admin.orders.read', 'description' => $this->language->get('text_endpoint_orders')],
-					['call' => 'order_histories', 'methods' => 'GET', 'scope' => 'admin.orders.read', 'description' => $this->language->get('text_endpoint_order_histories')],
-					['call' => 'order_history_add', 'methods' => 'POST', 'scope' => 'admin.orders.write', 'description' => $this->language->get('text_endpoint_order_history_add')],
-					['call' => 'returns', 'methods' => 'GET', 'scope' => 'admin.returns.read', 'description' => $this->language->get('text_endpoint_returns')],
-					['call' => 'return_histories', 'methods' => 'GET', 'scope' => 'admin.returns.read', 'description' => $this->language->get('text_endpoint_return_histories')],
-					['call' => 'return_history_add', 'methods' => 'POST', 'scope' => 'admin.returns.write', 'description' => $this->language->get('text_endpoint_return_history_add')],
-					['call' => 'coupons', 'methods' => 'GET', 'scope' => 'admin.coupons.read', 'description' => $this->language->get('text_endpoint_coupons')],
-					['call' => 'vouchers', 'methods' => 'GET', 'scope' => 'admin.vouchers.read', 'description' => $this->language->get('text_endpoint_vouchers')]
+					['call' => 'order', 'methods' => 'GET', 'scope' => 'admin.orders.read', 'description' => $this->language->get('text_endpoint_orders')],
+					['call' => 'order/{id}/histories', 'methods' => 'GET', 'scope' => 'admin.orders.read', 'description' => $this->language->get('text_endpoint_order_histories')],
+					['call' => 'order/{id}/history', 'methods' => 'POST', 'scope' => 'admin.orders.write', 'description' => $this->language->get('text_endpoint_order_history_add')],
+					['call' => 'return', 'methods' => 'GET', 'scope' => 'admin.returns.read', 'description' => $this->language->get('text_endpoint_returns')],
+					['call' => 'return/{id}/histories', 'methods' => 'GET', 'scope' => 'admin.returns.read', 'description' => $this->language->get('text_endpoint_return_histories')],
+					['call' => 'return/{id}/history', 'methods' => 'POST', 'scope' => 'admin.returns.write', 'description' => $this->language->get('text_endpoint_return_history_add')],
+					['call' => 'coupon', 'methods' => 'GET', 'scope' => 'admin.coupons.read', 'description' => $this->language->get('text_endpoint_coupons')],
+					['call' => 'voucher', 'methods' => 'GET', 'scope' => 'admin.vouchers.read', 'description' => $this->language->get('text_endpoint_vouchers')]
 				]
 			]
 		];
@@ -106,6 +106,7 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 	public function index(): void {
 		$this->load->language('extension/ferrez_admin_rest_api/module/ferrez_admin_rest_api');
 		$this->load->model('user/api');
+		$this->load->model('setting/extension');
 
 		$this->document->setTitle($this->language->get('heading_title'));
 
@@ -136,6 +137,31 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 		$data['module_ferrez_admin_rest_api_permissions'] = (string)$this->config->get('module_ferrez_admin_rest_api_permissions');
 		$data['status_badge_class'] = $data['module_ferrez_admin_rest_api_status'] ? 'bg-success' : 'bg-secondary';
 		$data['status_text'] = $data['module_ferrez_admin_rest_api_status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled');
+
+		$install_json = DIR_EXTENSION . 'ferrez_admin_rest_api/install.json';
+		$install_info = $this->model_setting_extension->getInstallByCode('ferrez_admin_rest_api');
+		$data['extension_version'] = (string)($install_info['version'] ?? '');
+		$data['capabilities_synced_at'] = (string)($install_info['date_modified'] ?? $install_info['date_added'] ?? '');
+
+		if (is_file($install_json)) {
+			$decoded = json_decode((string)file_get_contents($install_json), true);
+
+			if ($data['extension_version'] === '' && is_array($decoded) && !empty($decoded['version'])) {
+				$data['extension_version'] = (string)$decoded['version'];
+			}
+
+			if ($data['capabilities_synced_at'] === '') {
+				$data['capabilities_synced_at'] = date('Y-m-d H:i:s', (int)filemtime($install_json));
+			}
+		}
+
+		if ($data['extension_version'] === '') {
+			$data['extension_version'] = $this->language->get('text_not_available');
+		}
+
+		if ($data['capabilities_synced_at'] === '') {
+			$data['capabilities_synced_at'] = $this->language->get('text_not_available');
+		}
 
 		$allowed_origins = array_filter(array_map('trim', preg_split('/\r\n|\r|\n|,/', $data['module_ferrez_admin_rest_api_allowed_origins'])));
 		$data['allowed_origins_list'] = array_values($allowed_origins);
@@ -208,7 +234,19 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 		$data['pretty_endpoint_base'] = $catalog_url ? $catalog_url . '/api/admin/v1/' : '/api/admin/v1/';
 		$data['endpoint_groups'] = $this->getEndpointGroups();
 		$data['endpoint_total'] = array_sum(array_map(static fn(array $group): int => count($group['endpoints']), $data['endpoint_groups']));
-		$data['write_endpoint_total'] = 2;
+		$data['write_endpoint_total'] = 0;
+
+		foreach ($data['endpoint_groups'] as $group) {
+			foreach ($group['endpoints'] as $endpoint) {
+				$scope = (string)($endpoint['scope'] ?? '');
+
+				if (strpos($scope, '.write') !== false) {
+					$data['write_endpoint_total']++;
+				}
+			}
+		}
+
+		$data['read_endpoint_total'] = max(0, $data['endpoint_total'] - $data['write_endpoint_total']);
 
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
