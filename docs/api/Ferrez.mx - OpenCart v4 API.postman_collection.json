@@ -1106,6 +1106,154 @@
           }
         },
         {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/product?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "product"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test Product\",\n  \"model\": \"PM-TEST-001\",\n  \"price\": 99.99,\n  \"quantity\": 10,\n  \"status\": 1,\n  \"store_id\": {{store_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates a product. Required fields: `name`, `model`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Create product returns HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Create product returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "if (json.data && json.data.product_id) { pm.collectionVariables.set('sample_product_id', String(json.data.product_id)); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/product/{{sample_product_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "product",
+                "{{sample_product_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Updated Product\",\n  \"model\": \"PM-TEST-001-UPD\",\n  \"price\": 109.99,\n  \"quantity\": 7,\n  \"status\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Updates a product by ID. Required fields: `name`, `model`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Update product returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Update product returns success envelope', function () { pm.expect(json.success).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/product/{{sample_product_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "product",
+                "{{sample_product_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Deletes a product by ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Delete product returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Delete product returns success envelope', function () { pm.expect(json.success).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "List Categories",
           "event": [
             {
@@ -1217,6 +1365,154 @@
           }
         },
         {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/category?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "category"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test Category\",\n  \"status\": 1,\n  \"sort_order\": 1,\n  \"store_id\": {{store_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates a category. Required field: `name`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Create category returns HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Create category returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "if (json.data && json.data.category_id) { pm.collectionVariables.set('sample_category_id', String(json.data.category_id)); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/category/{{sample_category_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "category",
+                "{{sample_category_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Updated Category\",\n  \"status\": 1,\n  \"sort_order\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Updates a category by ID. Required field: `name`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Update category returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Update category returns success envelope', function () { pm.expect(json.success).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/category/{{sample_category_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "category",
+                "{{sample_category_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Deletes a category by ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Delete category returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Delete category returns success envelope', function () { pm.expect(json.success).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "List Manufacturers",
           "event": [
             {
@@ -1325,6 +1621,154 @@
             },
             "description": "Returns a single manufacturer by ID."
           }
+        },
+        {
+          "name": "Create Manufacturer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/manufacturer?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "manufacturer"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test Manufacturer\",\n  \"status\": 1,\n  \"sort_order\": 1,\n  \"store_id\": {{store_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates a manufacturer. Required field: `name`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Create manufacturer returns HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Create manufacturer returns success envelope', function () { pm.expect(json.success).to.eql(1); });",
+                  "if (json.data && json.data.manufacturer_id) { pm.collectionVariables.set('sample_manufacturer_id', String(json.data.manufacturer_id)); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Manufacturer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/manufacturer/{{sample_manufacturer_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "manufacturer",
+                "{{sample_manufacturer_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Updated Manufacturer\",\n  \"status\": 1,\n  \"sort_order\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Updates a manufacturer by ID. Required field: `name`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Update manufacturer returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Update manufacturer returns success envelope', function () { pm.expect(json.success).to.eql(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Manufacturer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/v1/manufacturer/{{sample_manufacturer_id}}?route={{admin_route}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "v1",
+                "manufacturer",
+                "{{sample_manufacturer_id}}"
+              ],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "{{admin_route}}"
+                }
+              ]
+            },
+            "description": "Deletes a manufacturer by ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Delete manufacturer returns HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Delete manufacturer returns success envelope', function () { pm.expect(json.success).to.eql(1); });"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "List Customers",
