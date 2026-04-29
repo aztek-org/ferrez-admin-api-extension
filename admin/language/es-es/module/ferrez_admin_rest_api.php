@@ -1,0 +1,65 @@
+<?php
+$_['heading_title'] = 'Ferrez Admin API';
+
+$_['text_extension'] = 'Extensiones';
+$_['text_success'] = 'Éxito: Has modificado la configuración de Ferrez Admin API.';
+$_['text_edit'] = 'Editar Ferrez Admin API';
+$_['text_enabled'] = 'Habilitado';
+$_['text_disabled'] = 'Deshabilitado';
+$_['text_dashboard'] = 'Panel';
+$_['text_configuration'] = 'Configuración';
+$_['text_overview'] = 'Resumen';
+$_['text_status_card'] = 'Estado de la extensión';
+$_['text_api_users_card'] = 'Usuarios API';
+$_['text_scopes_card'] = 'Scopes configurados';
+$_['text_endpoints_card'] = 'Endpoints';
+$_['text_route_reference'] = 'Referencia de rutas';
+$_['text_extension_route'] = 'Ruta de la extensión';
+$_['text_pretty_route'] = 'Ruta amigable';
+$_['text_api_users'] = 'Usuarios API configurados';
+$_['text_no_api_users'] = 'No se encontraron usuarios API. Crea uno en Sistema > Usuarios > API.';
+$_['text_permission_overview'] = 'Resumen de permisos';
+$_['text_no_permissions'] = 'No hay JSON de permisos configurado. Los endpoints con scope se bloquean hasta asignar permisos explícitos a un usuario API.';
+$_['text_endpoint_catalog'] = 'Catálogo de endpoints';
+$_['text_no_origins'] = 'No hay orígenes explícitos configurados';
+$_['text_allowed_origins'] = 'Orígenes permitidos';
+$_['text_ip_whitelist'] = 'IPs permitidas';
+$_['text_last_updated'] = 'Última actualización';
+$_['text_scope_count'] = 'Cantidad de scopes';
+$_['text_open_api_users'] = 'Abrir usuarios API';
+$_['text_methods'] = 'Métodos';
+$_['text_scope'] = 'Scope';
+$_['text_description'] = 'Descripción';
+$_['text_group_system'] = 'Sistema';
+$_['text_group_catalog'] = 'Catálogo y clientes';
+$_['text_group_sales'] = 'Ventas y ajustes';
+$_['text_endpoint_health'] = 'Prueba de salud para autenticación, firma y disponibilidad del módulo.';
+$_['text_endpoint_metadata'] = 'Datos de referencia para tiendas, idiomas, monedas y catálogos de estados.';
+$_['text_endpoint_products'] = 'Lecturas de listado y detalle de productos para integraciones administrativas.';
+$_['text_endpoint_categories'] = 'Lecturas de categorías para sincronización de catálogo.';
+$_['text_endpoint_manufacturers'] = 'Lecturas de listado y detalle de fabricantes.';
+$_['text_endpoint_customers'] = 'Lecturas de listado y detalle de clientes, incluyendo grupo y banderas de seguridad.';
+$_['text_endpoint_customer_groups'] = 'Lecturas de listado y detalle de grupos de clientes.';
+$_['text_endpoint_orders'] = 'Lecturas de listado y detalle de pedidos, incluyendo productos, totales e historiales.';
+$_['text_endpoint_order_histories'] = 'Lecturas de la línea de tiempo de estados de pedidos.';
+$_['text_endpoint_order_history_add'] = 'Escrituras de historial/estado de pedidos.';
+$_['text_endpoint_returns'] = 'Lecturas de listado y detalle de devoluciones, incluyendo historiales.';
+$_['text_endpoint_return_histories'] = 'Lecturas de la línea de tiempo de estados de devoluciones.';
+$_['text_endpoint_return_history_add'] = 'Escrituras de historial/estado de devoluciones.';
+$_['text_endpoint_coupons'] = 'Lecturas de listado y detalle de cupones.';
+$_['text_endpoint_vouchers'] = 'Lecturas de vouchers inferidos desde los totales del pedido.';
+$_['text_configuration_help'] = 'Usa la configuración inferior para controlar la seguridad en tiempo de ejecución. El panel superior es solo de consulta y refleja la configuración actual.';
+$_['text_permissions_example'] = 'Ejemplo';
+
+$_['entry_status'] = 'Estado';
+$_['entry_allowed_origins'] = 'Orígenes CORS permitidos';
+$_['entry_max_time_skew'] = 'Desfase máximo de timestamp (segundos)';
+$_['entry_permissions'] = 'JSON de permisos';
+
+$_['help_allowed_origins'] = 'Orígenes separados por coma, por ejemplo: https://ferrez.mx,https://admin.ferrez.mx';
+$_['help_max_time_skew'] = 'Desfase de tiempo aceptado para protección contra repetición. Predeterminado: 450 segundos.';
+$_['help_permissions'] = 'Objeto JSON por usuario API, por ejemplo: {"erp_user":["admin.products.read","admin.health.read"]}';
+
+$_['error_permission'] = 'Advertencia: No tienes permiso para modificar este módulo.';
+$_['error_permissions'] = 'El JSON de permisos no es válido.';
+$_['error_time_skew'] = 'El desfase máximo debe estar entre 60 y 3600 segundos.';

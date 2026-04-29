@@ -1,0 +1,65 @@
+<?php
+$_['heading_title'] = 'Ferrez Admin API';
+
+$_['text_extension'] = 'Extensions';
+$_['text_success'] = 'Success: You have modified Ferrez Admin API settings.';
+$_['text_edit'] = 'Edit Ferrez Admin API';
+$_['text_enabled'] = 'Enabled';
+$_['text_disabled'] = 'Disabled';
+$_['text_dashboard'] = 'Dashboard';
+$_['text_configuration'] = 'Configuration';
+$_['text_overview'] = 'Overview';
+$_['text_status_card'] = 'Extension Status';
+$_['text_api_users_card'] = 'API Users';
+$_['text_scopes_card'] = 'Configured Scopes';
+$_['text_endpoints_card'] = 'Endpoints';
+$_['text_route_reference'] = 'Route Reference';
+$_['text_extension_route'] = 'Extension Route';
+$_['text_pretty_route'] = 'Pretty Route';
+$_['text_api_users'] = 'Configured API Users';
+$_['text_no_api_users'] = 'No API users found. Create one under System > Users > API.';
+$_['text_permission_overview'] = 'Permissions Overview';
+$_['text_no_permissions'] = 'No permissions JSON is configured. Scoped endpoints are denied until explicit scopes are assigned to an API user.';
+$_['text_endpoint_catalog'] = 'Endpoint Catalog';
+$_['text_no_origins'] = 'No explicit origins configured';
+$_['text_allowed_origins'] = 'Allowed Origins';
+$_['text_ip_whitelist'] = 'Whitelisted IPs';
+$_['text_last_updated'] = 'Last Updated';
+$_['text_scope_count'] = 'Scope Count';
+$_['text_open_api_users'] = 'Open API Users';
+$_['text_methods'] = 'Methods';
+$_['text_scope'] = 'Scope';
+$_['text_description'] = 'Description';
+$_['text_group_system'] = 'System';
+$_['text_group_catalog'] = 'Catalog & Customers';
+$_['text_group_sales'] = 'Sales & Adjustments';
+$_['text_endpoint_health'] = 'Health probe for auth, signature, and module availability.';
+$_['text_endpoint_metadata'] = 'Reference data for stores, languages, currencies, and status catalogs.';
+$_['text_endpoint_products'] = 'Product list and detail reads for admin-side integrations.';
+$_['text_endpoint_categories'] = 'Category list reads for catalog synchronization.';
+$_['text_endpoint_manufacturers'] = 'Manufacturer list and detail reads.';
+$_['text_endpoint_customers'] = 'Customer list and detail reads including group and safety flags.';
+$_['text_endpoint_customer_groups'] = 'Customer group list and detail reads.';
+$_['text_endpoint_orders'] = 'Order list and detail reads including products, totals, and histories.';
+$_['text_endpoint_order_histories'] = 'Historical order status timeline reads.';
+$_['text_endpoint_order_history_add'] = 'Order history/status writes.';
+$_['text_endpoint_returns'] = 'Return list and detail reads including histories.';
+$_['text_endpoint_return_histories'] = 'Historical return status timeline reads.';
+$_['text_endpoint_return_history_add'] = 'Return history/status writes.';
+$_['text_endpoint_coupons'] = 'Coupon list and detail reads.';
+$_['text_endpoint_vouchers'] = 'Voucher-like order total reads.';
+$_['text_configuration_help'] = 'Use the settings below to control runtime security. The dashboard above is read-only and reflects current configuration.';
+$_['text_permissions_example'] = 'Example';
+
+$_['entry_status'] = 'Status';
+$_['entry_allowed_origins'] = 'Allowed CORS Origins';
+$_['entry_max_time_skew'] = 'Max Timestamp Skew (seconds)';
+$_['entry_permissions'] = 'Permissions JSON';
+
+$_['help_allowed_origins'] = 'Comma-separated origins, for example: https://ferrez.mx,https://admin.ferrez.mx';
+$_['help_max_time_skew'] = 'Accepted timestamp drift for replay protection. Default: 450 seconds.';
+$_['help_permissions'] = 'JSON object by API username, for example: {"erp_user":["admin.products.read","admin.health.read"]}';
+
+$_['error_permission'] = 'Warning: You do not have permission to modify this module.';
+$_['error_permissions'] = 'Permissions JSON is invalid.';
+$_['error_time_skew'] = 'Max timestamp skew must be between 60 and 3600 seconds.';
