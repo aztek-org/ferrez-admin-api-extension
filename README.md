@@ -248,30 +248,30 @@ All responses follow JSON:API standard structure:
 
 ```
 ferrez_admin_rest_api/
-Γö£ΓöÇΓöÇ install.json                  # Metadata
-Γö£ΓöÇΓöÇ admin/
-Γöé   Γö£ΓöÇΓöÇ controller/module/ferrez_admin_rest_api.php    # Admin module handler
-Γöé   Γö£ΓöÇΓöÇ view/template/module/ferrez_admin_rest_api.twig # Admin UI
-Γöé   ΓööΓöÇΓöÇ language/
-Γöé       Γö£ΓöÇΓöÇ en-gb/module/ferrez_admin_rest_api.php
-Γöé       ΓööΓöÇΓöÇ es-es/module/ferrez_admin_rest_api.php
-ΓööΓöÇΓöÇ catalog/
-    Γö£ΓöÇΓöÇ controller/
-    Γöé   Γö£ΓöÇΓöÇ api/admin.php                # Main API controller
-    Γöé   Γö£ΓöÇΓöÇ api/base.php                 # Base API class
-    Γöé   ΓööΓöÇΓöÇ startup/admin_api.php        # Route registration
-    Γö£ΓöÇΓöÇ model/api/
-    Γöé   Γö£ΓöÇΓöÇ category.php
-    Γöé   Γö£ΓöÇΓöÇ coupon.php
-    Γöé   Γö£ΓöÇΓöÇ customer_group.php
-    Γöé   Γö£ΓöÇΓöÇ customer.php
-    Γöé   Γö£ΓöÇΓöÇ manufacturer.php
-    Γöé   Γö£ΓöÇΓöÇ metadata.php
-    Γöé   Γö£ΓöÇΓöÇ order.php
-    Γöé   Γö£ΓöÇΓöÇ product.php
-    Γöé   Γö£ΓöÇΓöÇ returns.php
-    Γöé   ΓööΓöÇΓöÇ voucher.php
-    ΓööΓöÇΓöÇ language/en-gb/api/admin.php
+|- install.json                  # Metadata
+|- admin/
+|  |- controller/module/ferrez_admin_rest_api.php    # Admin module handler
+|  |- view/template/module/ferrez_admin_rest_api.twig # Admin UI
+|  `- language/
+|     |- en-gb/module/ferrez_admin_rest_api.php
+|     `- es-es/module/ferrez_admin_rest_api.php
+`- catalog/
+   |- controller/
+   |  |- api/admin.php                # Main API controller
+   |  |- api/base.php                 # Base API class
+   |  `- startup/admin_api.php        # Route registration
+   |- model/api/
+   |  |- category.php
+   |  |- coupon.php
+   |  |- customer_group.php
+   |  |- customer.php
+   |  |- manufacturer.php
+   |  |- metadata.php
+   |  |- order.php
+   |  |- product.php
+   |  |- returns.php
+   |  `- voucher.php
+   `- language/en-gb/api/admin.php
 ```
 
 ### API Request Lifecycle
