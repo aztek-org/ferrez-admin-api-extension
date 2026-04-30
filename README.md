@@ -177,6 +177,12 @@ The extension provides a comprehensive dashboard with:
 
 1. **System** -> **Modules** -> **Ferrez Admin API**
 
+### Extension Page Notes
+
+- Route Reference shows extension route and pretty route base URLs.
+- The dashboard now includes a quick reminder for product image upload.
+- For product create/update, send images with `multipart/form-data` and file field `image_file`.
+
 ## Product Images
 
 Recommended upload format for product images is **multipart/form-data** using the file field `image_file`.
@@ -197,10 +203,6 @@ curl -X POST "http://localhost:8080/api/admin/v1/product?route=extension/ferrez_
   -F "quantity=5" \
   -F "image_file=@C:/tmp/product.jpg"
 ```
-2. Dashboard tabs:
-   - Overview
-   - Configuration
-   - API Users
 
 ## Troubleshooting
 
@@ -310,6 +312,14 @@ ferrez_admin_rest_api/
 - **Issues**: Report bugs or feature requests on GitHub Issues
 
 ## Version History
+
+### 1.2.2
+- Added product image upload reminder on the extension admin page
+- Updated repository documentation for extension page and multipart upload guidance
+
+### 1.2.1
+- Fixed README character encoding issues
+- Added multipart image upload capability for product create/update API
 
 ### 1.1.0
 - Renamed to Ferrez Admin API (simplified branding)

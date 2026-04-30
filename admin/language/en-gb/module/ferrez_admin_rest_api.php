@@ -64,6 +64,8 @@ $_['text_permissions_example'] = 'Example';
 $_['text_read_endpoints'] = 'read endpoints';
 $_['text_write_endpoints'] = 'write endpoints';
 $_['text_users_with_explicit_scope_maps'] = 'users with explicit scope maps';
+$_['text_product_image_upload'] = 'Product image upload';
+$_['text_product_image_upload_hint'] = 'Use multipart/form-data with image_file for POST /api/admin/v1/product and PUT /api/admin/v1/product/{product_id}.';
 $_['text_not_available'] = 'N/A';
 
 $_['entry_status'] = 'Status';
