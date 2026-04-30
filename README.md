@@ -1,6 +1,6 @@
 # Ferrez Admin API
 
-Secure admin REST API for OpenCart 4 with HMAC authentication, scoped read/write access, and admin dashboard for monitoring API activity.
+Secure admin API for OpenCart 4 with HMAC authentication, scoped read/write access, and admin dashboard for monitoring API activity.
 
 ## Features
 
@@ -299,7 +299,7 @@ ferrez_admin_rest_api/
 - Comprehensive endpoint coverage
 
 ### 1.0.0
-- Initial release as Admin REST API
+- Initial release as Ferrez Admin API
 
 ## License
 
@@ -308,3 +308,4 @@ Proprietary - Ferrez.mx
 ## Author
 
 Ferrez.mx Development Team
+

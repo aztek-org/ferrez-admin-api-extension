@@ -306,7 +306,7 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 		$this->model_setting_startup->deleteStartupByCode('ferrez_admin_rest_api');
 		$this->model_setting_startup->addStartup([
 			'code' => 'ferrez_admin_rest_api',
-			'description' => 'Ferrez Admin REST API Startup Router',
+			'description' => 'Ferrez Admin API Startup Router',
 			'action' => 'catalog/extension/ferrez_admin_rest_api/startup/admin_api',
 			'status' => 1,
 			'sort_order' => 998
@@ -337,3 +337,4 @@ class FerrezAdminRestApi extends \Opencart\System\Engine\Controller {
 		$this->model_setting_setting->deleteSetting('module_ferrez_admin_rest_api');
 	}
 }
+

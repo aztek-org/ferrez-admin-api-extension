@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "ferrez-mx-opencart-v4-api",
     "name": "Ferrez.mx — OpenCart v4 API",
-    "description": "# OpenCart v4 API Collection\n\nThis collection now covers two API surfaces:\n\n1. **Built-in OpenCart v4 order/checkout API** for cart and order creation flows\n2. **Ferrez Admin REST API extension** for admin-side catalog, customer, manufacturer, customer group, order, coupon, voucher, return, and metadata reads plus order/return history writes\n\n> The built-in API is still order/checkout-focused only. Catalog and admin reporting entities are exposed through the custom admin REST extension, not the stock OpenCart API.\n\n---\n\n## Authentication: HMAC-SHA1 Signature\n\nBoth API surfaces in this collection use **per-request HMAC-SHA1 signature verification**. There is no login endpoint and no token exchange — every single request is independently authenticated.\n\n### Setup\n\n1. **Create an API user** in admin panel: System → Users → API\n2. **Copy the username and key** and paste them into the collection variables below\n3. **Whitelist your IP** in the API user's IP addresses tab\n4. Set the `base_url`, `store_id`, `language`, and `currency` variables\n5. For the custom admin API, ensure the `Ferrez Admin REST API` module is installed and enabled\n\n### How the signature works\n\nEach request builds a string from the request parameters and signs it with the API key using HMAC-SHA1:\n\n```\n{route}\\n{call}\\n{username}\\n{host}\\n{path}\\n{store_id}\\n{language}\\n{currency}\\n{md5_of_post_body}\\n{timestamp}\\n\n```\n\nThe signature is then base64-encoded in the `signature` query parameter.\n\nThe **Pre-request Script** at the collection level handles this automatically — you only need to set the variables and keep `route` and `call` in each request query.\n\n### Validation checks (server-side)\n\n1. All required query params present (`route`, `call`, `username`, `store_id`, `language`, `currency`, `time`, `signature`)\n2. Username exists in `oc_api` with `status = 1`\n3. Requester IP is in the `oc_api_ip` whitelist\n4. Timestamp within ±450 seconds of server time\n5. HMAC signature matches\n6. For the admin extension, the module must be enabled and the API username must have any configured scopes\n\nIf any check fails → `403 Forbidden`\n\n---\n\n## Built-in Order Creation Flow\n\nTo create an order with the stock OpenCart API, follow this sequence:\n\n```\n1. Set Customer       → api/order?call=customer\n2. Add Product(s)     → api/order?call=product_add\n3. Set Payment Addr   → api/order?call=payment_address\n4. Set Shipping Addr  → api/order?call=shipping_address\n5. Get Ship Methods   → api/order?call=shipping_methods\n6. Set Ship Method    → api/order?call=shipping_method\n7. Get Pay Methods    → api/order?call=payment_methods\n8. Set Pay Method     → api/order?call=payment_method\n9. Confirm Order      → api/order?call=confirm\n10. Add History       → api/order?call=history_add\n```\n\n## Ferrez Admin REST API Highlights\n\nThe custom admin API uses route `extension/ferrez_admin_rest_api/api/admin` and currently includes:\n\n- `health`\n- `metadata`\n- `products`\n- `categories`\n- `manufacturers` (list and detail)\n- `customers` (list and detail)\n- `customer_groups` (list and detail)\n- `orders`\n- `order_histories`\n- `order_history_add`\n- `coupons`\n- `vouchers`\n- `returns`\n- `return_histories`\n- `return_history_add`",
+    "description": "# OpenCart v4 API Collection\n\nThis collection now covers two API surfaces:\n\n1. **Built-in OpenCart v4 order/checkout API** for cart and order creation flows\n2. **Ferrez Admin API extension** for admin-side catalog, customer, manufacturer, customer group, order, coupon, voucher, return, and metadata reads plus order/return history writes\n\n> The built-in API is still order/checkout-focused only. Catalog and admin reporting entities are exposed through the custom admin extension, not the stock OpenCart API.\n\n---\n\n## Authentication: HMAC-SHA1 Signature\n\nBoth API surfaces in this collection use **per-request HMAC-SHA1 signature verification**. There is no login endpoint and no token exchange — every single request is independently authenticated.\n\n### Setup\n\n1. **Create an API user** in admin panel: System → Users → API\n2. **Copy the username and key** and paste them into the collection variables below\n3. **Whitelist your IP** in the API user's IP addresses tab\n4. Set the `base_url`, `store_id`, `language`, and `currency` variables\n5. For the custom admin API, ensure the `Ferrez Admin API` module is installed and enabled\n\n### How the signature works\n\nEach request builds a string from the request parameters and signs it with the API key using HMAC-SHA1:\n\n```\n{route}\\n{call}\\n{username}\\n{host}\\n{path}\\n{store_id}\\n{language}\\n{currency}\\n{md5_of_post_body}\\n{timestamp}\\n\n```\n\nThe signature is then base64-encoded in the `signature` query parameter.\n\nThe **Pre-request Script** at the collection level handles this automatically — you only need to set the variables and keep `route` and `call` in each request query.\n\n### Validation checks (server-side)\n\n1. All required query params present (`route`, `call`, `username`, `store_id`, `language`, `currency`, `time`, `signature`)\n2. Username exists in `oc_api` with `status = 1`\n3. Requester IP is in the `oc_api_ip` whitelist\n4. Timestamp within ±450 seconds of server time\n5. HMAC signature matches\n6. For the admin extension, the module must be enabled and the API username must have any configured scopes\n\nIf any check fails → `403 Forbidden`\n\n---\n\n## Built-in Order Creation Flow\n\nTo create an order with the stock OpenCart API, follow this sequence:\n\n```\n1. Set Customer       → api/order?call=customer\n2. Add Product(s)     → api/order?call=product_add\n3. Set Payment Addr   → api/order?call=payment_address\n4. Set Shipping Addr  → api/order?call=shipping_address\n5. Get Ship Methods   → api/order?call=shipping_methods\n6. Set Ship Method    → api/order?call=shipping_method\n7. Get Pay Methods    → api/order?call=payment_methods\n8. Set Pay Method     → api/order?call=payment_method\n9. Confirm Order      → api/order?call=confirm\n10. Add History       → api/order?call=history_add\n```\n\n## Ferrez Admin API Highlights\n\nThe custom admin API uses route `extension/ferrez_admin_rest_api/api/admin` and currently includes:\n\n- `health`\n- `metadata`\n- `products`\n- `categories`\n- `manufacturers` (list and detail)\n- `customers` (list and detail)\n- `customer_groups` (list and detail)\n- `orders`\n- `order_histories`\n- `order_history_add`\n- `coupons`\n- `vouchers`\n- `returns`\n- `return_histories`\n- `return_history_add`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -39,7 +39,7 @@
     {
       "key": "admin_route",
       "value": "extension/ferrez_admin_rest_api/api/admin",
-      "description": "Route value for the Ferrez Admin REST API extension"
+      "description": "Route value for the Ferrez Admin API extension"
     },
     {
       "key": "sample_product_id",
@@ -903,8 +903,8 @@
       ]
     },
     {
-      "name": "Ferrez Admin REST API",
-      "description": "Admin-side reads and history writes exposed by the Ferrez Admin REST API extension.",
+      "name": "Ferrez Admin API",
+      "description": "Admin-side reads and history writes exposed by the Ferrez Admin API extension.",
       "item": [
         {
           "name": "Health",
@@ -943,7 +943,7 @@
                 }
               ]
             },
-            "description": "Simple health check for the custom admin REST API. Use this first to confirm the module, signature, and API user are working."
+            "description": "Simple health check for the custom admin API. Use this first to confirm the module, signature, and API user are working."
           }
         },
         {
@@ -2457,3 +2457,4 @@
     }
   ]
 }
+
