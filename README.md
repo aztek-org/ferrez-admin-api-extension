@@ -24,15 +24,15 @@ Secure admin API for OpenCart 4 with HMAC authentication, scoped read/write acce
 ## Installation
 
 1. Extract the OCMOD zip file or copy the extension folder to your OpenCart `extension/` directory
-2. Navigate to **Extensions** ΓåÆ **Extensions** ΓåÆ **Modules** in your OpenCart admin
+2. Navigate to **Extensions** -> **Extensions** -> **Modules** in your OpenCart admin
 3. Find **Ferrez Admin API** and click **Install**
-4. Access the dashboard via **Modules** ΓåÆ **Ferrez Admin API** or through the main sidebar
+4. Access the dashboard via **Modules** -> **Ferrez Admin API** or through the main sidebar
 
 ## Quick Start
 
 ### 1. Create API User
 
-1. Go to **System** ΓåÆ **Users** ΓåÆ **API**
+1. Go to **System** -> **Users** -> **API**
 2. Click **Add New**
 3. Enter username and password
 4. Configure token generation method
@@ -113,7 +113,7 @@ curl -X GET "http://localhost/api/admin/v1/products" \
 ### Request Timestamp Validation
 
 - Requests must include a `timestamp` parameter
-- Server validates timestamp is within acceptable window (default: ┬▒5 minutes)
+- Server validates timestamp is within acceptable window (default: +/- 5 minutes)
 - Prevents replay attacks
 
 ## Scopes Configuration
@@ -175,7 +175,28 @@ The extension provides a comprehensive dashboard with:
 
 ### Dashboard Navigation
 
-1. **System** ΓåÆ **Modules** ΓåÆ **Ferrez Admin API**
+1. **System** -> **Modules** -> **Ferrez Admin API**
+
+## Product Images
+
+Recommended upload format for product images is **multipart/form-data** using the file field `image_file`.
+
+- Endpoint: `POST /api/admin/v1/product` (create)
+- Endpoint: `PUT /api/admin/v1/product/{product_id}` (update)
+- File field: `image_file`
+- Allowed extensions: `jpg`, `jpeg`, `png`, `gif`, `webp`
+- Default max size: 5 MB (configurable via `module_ferrez_admin_rest_api_max_upload_size`)
+
+Example:
+
+```bash
+curl -X POST "http://localhost:8080/api/admin/v1/product?route=extension/ferrez_admin_rest_api/api/admin&username=...&store_id=0&language=es-es&currency=MXN&time=...&signature=..." \
+  -F "name=Demo Product" \
+  -F "model=DEMO-001" \
+  -F "price=149.90" \
+  -F "quantity=5" \
+  -F "image_file=@C:/tmp/product.jpg"
+```
 2. Dashboard tabs:
    - Overview
    - Configuration

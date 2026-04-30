@@ -160,6 +160,12 @@ class Admin extends Base {
 
 				$input = $this->getRequestBodyData();
 
+				if (!$this->attachProductImageFromMultipart($input)) {
+					$this->audit('product_create_invalid_image', 400);
+
+					return;
+				}
+
 				if (trim((string)($input['name'] ?? '')) === '' || trim((string)($input['model'] ?? '')) === '') {
 					$this->respondError(400, 'error_required', ['required' => ['name', 'model']]);
 					$this->audit('product_create_invalid_payload', 400);
@@ -189,6 +195,13 @@ class Admin extends Base {
 				$this->load->model('extension/ferrez_admin_rest_api/api/product');
 
 				$input = $this->getRequestBodyData();
+
+				if (!$this->attachProductImageFromMultipart($input)) {
+					$this->audit('product_update_invalid_image', 400);
+
+					return;
+				}
+
 				$product_id = (int)($input['product_id'] ?? ($this->request->get['product_id'] ?? 0));
 
 				if ($product_id < 1) {
@@ -1102,6 +1115,68 @@ class Admin extends Base {
 
 				return;
 		}
+	}
+
+	private function attachProductImageFromMultipart(array &$input): bool {
+		$file = $this->request->files['image_file'] ?? null;
+
+		if (!is_array($file) || empty($file['tmp_name'])) {
+			return true;
+		}
+
+		$upload_error = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+
+		if ($upload_error !== UPLOAD_ERR_OK) {
+			$this->respondError(400, 'error_image_upload', ['reason' => 'upload_error', 'code' => $upload_error]);
+
+			return false;
+		}
+
+		$allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+		$max_bytes = (int)($this->config->get('module_ferrez_admin_rest_api_max_upload_size') ?: 5242880);
+		$size = (int)($file['size'] ?? 0);
+
+		if ($size < 1 || $size > $max_bytes) {
+			$this->respondError(400, 'error_image_invalid', ['reason' => 'size', 'max_bytes' => $max_bytes]);
+
+			return false;
+		}
+
+		$original_name = (string)($file['name'] ?? 'upload.bin');
+		$extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+
+		if (!in_array($extension, $allowed_extensions, true)) {
+			$this->respondError(400, 'error_image_invalid', ['reason' => 'extension', 'allowed' => $allowed_extensions]);
+
+			return false;
+		}
+
+		if (!defined('DIR_IMAGE') || !DIR_IMAGE) {
+			$this->respondError(500, 'error_image_upload', ['reason' => 'image_path_unavailable']);
+
+			return false;
+		}
+
+		$target_dir = rtrim(DIR_IMAGE, '/\\') . '/catalog/ferrez_admin_api/';
+
+		if (!is_dir($target_dir) && !mkdir($target_dir, 0775, true) && !is_dir($target_dir)) {
+			$this->respondError(500, 'error_image_upload', ['reason' => 'cannot_create_directory']);
+
+			return false;
+		}
+
+		$filename = 'product_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+		$target_path = $target_dir . $filename;
+
+		if (!move_uploaded_file((string)$file['tmp_name'], $target_path)) {
+			$this->respondError(500, 'error_image_upload', ['reason' => 'cannot_move_file']);
+
+			return false;
+		}
+
+		$input['image'] = 'catalog/ferrez_admin_api/' . $filename;
+
+		return true;
 	}
 
 }
