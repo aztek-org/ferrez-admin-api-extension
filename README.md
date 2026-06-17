@@ -313,6 +313,15 @@ ferrez_admin_rest_api/
 
 ## Version History
 
+### 1.3.0 (2026-06-17)
+- **Bug Fix:** Fixed HTML escaping issue in JSON permissions configuration
+  - Added `htmlspecialchars_decode()` to properly handle API permissions
+  - Prevents JSON corruption when saving scopes in admin panel
+- **Simplified:** Removed extension version tracking from admin controller
+- **Standardized:** Endpoint names now use consistent plural form (`products`, `orders`, `categories`, etc.)
+- **Cleanup:** Removed embedded Postman documentation (moved to separate repository)
+- **Updated:** Install metadata for better extension management
+
 ### 1.2.2
 - Added product image upload reminder on the extension admin page
 - Updated repository documentation for extension page and multipart upload guidance
