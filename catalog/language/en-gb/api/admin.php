@@ -13,5 +13,3 @@ $_['error_order'] = 'Order not found.';
 $_['error_product'] = 'Product not found.';
 $_['error_return'] = 'Return not found.';
 $_['error_customer_group'] = 'Customer group not found.';
-$_['error_image_upload'] = 'Image upload failed.';
-$_['error_image_invalid'] = 'The provided image is invalid.';
